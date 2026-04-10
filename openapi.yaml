@@ -1,0 +1,309 @@
+openapi: "3.1.0"
+info:
+  title: Task Tracker API
+  description: >
+    A contract-first REST API for managing tasks. This specification serves as
+    the single source of truth — all request validation and routing is driven
+    by this document.
+  version: "1.0.0"
+  contact:
+    name: Student
+
+servers:
+  - url: http://localhost:5000
+    description: Local development server
+
+tags:
+  - name: Tasks
+    description: CRUD and custom operations for task management
+
+paths:
+  /:
+    get:
+      tags: [Tasks]
+      summary: List all tasks
+      description: Returns every task currently stored in the system.
+      operationId: TaskService_list
+      responses:
+        "200":
+          description: A JSON array of all tasks.
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Task"
+        "400":
+          description: Bad request.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+
+    post:
+      tags: [Tasks]
+      summary: Create a new task
+      description: >
+        Adds a new task to the collection. The server auto-generates a unique
+        id for the created resource.
+      operationId: TaskService_create
+      requestBody:
+        description: The task data to create.
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/TaskCreate"
+      responses:
+        "201":
+          description: Task created successfully.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Task"
+        "400":
+          description: Validation failed — missing required fields, wrong types, or invalid enum value.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+
+  /{id}:
+    parameters:
+      - name: id
+        in: path
+        description: The unique identifier of the task.
+        required: true
+        schema:
+          type: string
+
+    get:
+      tags: [Tasks]
+      summary: Get a task by ID
+      description: Retrieves a single task identified by its unique ID.
+      operationId: TaskService_get
+      responses:
+        "200":
+          description: The requested task.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Task"
+        "400":
+          description: Bad request.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+        "404":
+          description: No task found with the given ID.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+
+    patch:
+      tags: [Tasks]
+      summary: Partially update a task
+      description: >
+        Updates one or more fields of an existing task. Only the fields
+        included in the request body are modified; all other fields remain
+        unchanged.
+      operationId: TaskService_update
+      requestBody:
+        description: The fields to update on the task.
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/TaskUpdate"
+      responses:
+        "200":
+          description: The updated task.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Task"
+        "400":
+          description: Validation failed — wrong types or invalid enum value.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+        "404":
+          description: No task found with the given ID.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+
+    delete:
+      tags: [Tasks]
+      summary: Delete a task
+      description: Permanently removes a task from the collection.
+      operationId: TaskService_delete
+      responses:
+        "200":
+          description: Task deleted successfully.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Task"
+        "400":
+          description: Bad request.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+        "404":
+          description: No task found with the given ID.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+
+  /summary:
+    get:
+      tags: [Tasks]
+      summary: Get task statistics
+      description: >
+        Returns an aggregated summary of all tasks in the system, including
+        the total count, total estimated hours, average hours per task, and
+        a breakdown of tasks grouped by status.
+      operationId: TaskService_summary
+      responses:
+        "200":
+          description: Aggregated task statistics.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/TaskSummary"
+        "400":
+          description: Bad request.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+
+components:
+  schemas:
+    Task:
+      type: object
+      description: >
+        The full task resource as stored in the system. The id field is
+        auto-generated by the server and is read-only.
+      required: [id, title, assignee, status, hours, dueDate]
+      properties:
+        id:
+          type: string
+          description: Auto-generated unique identifier (UUID).
+          readOnly: true
+        title:
+          type: string
+          description: A short, descriptive name for the task.
+        assignee:
+          type: string
+          description: The person responsible for completing the task.
+        status:
+          type: string
+          enum: [Pending, InProgress, Done]
+          description: "Current status of the task: Pending, InProgress, or Done."
+        hours:
+          type: integer
+          format: int32
+          description: Estimated number of hours to complete the task.
+        dueDate:
+          type: string
+          format: date
+          description: The deadline for the task in ISO 8601 date format (YYYY-MM-DD).
+      example:
+        id: "a1b2c3d4-e5f6-7890-abcd-ef1234567890"
+        title: "Implement login page"
+        assignee: "Alice"
+        status: "Pending"
+        hours: 8
+        dueDate: "2026-05-15"
+
+    TaskCreate:
+      type: object
+      description: >
+        Schema for creating a new task. All fields are required. The server
+        generates the id automatically.
+      required: [title, assignee, status, hours, dueDate]
+      properties:
+        title:
+          type: string
+          description: A short, descriptive name for the task.
+        assignee:
+          type: string
+          description: The person responsible for completing the task.
+        status:
+          type: string
+          enum: [Pending, InProgress, Done]
+          description: "Initial status of the task: Pending, InProgress, or Done."
+        hours:
+          type: integer
+          format: int32
+          description: Estimated number of hours to complete the task.
+        dueDate:
+          type: string
+          format: date
+          description: The deadline for the task in ISO 8601 date format (YYYY-MM-DD).
+
+    TaskUpdate:
+      type: object
+      description: >
+        Schema for partially updating a task. All fields are optional — only
+        the fields included in the request body will be modified.
+      properties:
+        title:
+          type: string
+          description: A short, descriptive name for the task.
+        assignee:
+          type: string
+          description: The person responsible for completing the task.
+        status:
+          type: string
+          enum: [Pending, InProgress, Done]
+          description: "Updated status of the task: Pending, InProgress, or Done."
+        hours:
+          type: integer
+          format: int32
+          description: Estimated number of hours to complete the task.
+        dueDate:
+          type: string
+          format: date
+          description: The deadline for the task in ISO 8601 date format (YYYY-MM-DD).
+
+    TaskSummary:
+      type: object
+      description: >
+        An aggregated view of task data. Provides total counts, hour
+        statistics, and a per-status breakdown.
+      properties:
+        totalTasks:
+          type: integer
+          format: int32
+          description: Total number of tasks in the system.
+        totalHours:
+          type: integer
+          format: int32
+          description: Sum of estimated hours across all tasks.
+        averageHours:
+          type: number
+          format: double
+          description: Average estimated hours per task (0 if no tasks exist).
+        tasksByStatus:
+          type: object
+          description: Number of tasks grouped by their current status.
+          additionalProperties:
+            type: integer
+            format: int32
+
+    Error:
+      type: object
+      description: Standard error response returned when a request fails validation or a resource is not found.
+      properties:
+        message:
+          type: string
+          description: A message describing the error.
