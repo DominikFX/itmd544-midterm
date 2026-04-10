@@ -1,15 +1,26 @@
+using Microsoft.EntityFrameworkCore;
 using task_tracker.Models;
 
 namespace task_tracker.Store;
 
 public class TaskStore
 {
-    private readonly List<TaskItem> _tasks;
+    private readonly TaskDbContext _db;
 
-    public TaskStore()
+    public TaskStore(TaskDbContext db)
     {
-        _tasks = new List<TaskItem>
-        {
+        _db = db;
+    }
+
+    /// <summary>
+    /// Seeds the database with initial data if the Tasks table is empty.
+    /// Called once on application startup.
+    /// </summary>
+    public void SeedIfEmpty()
+    {
+        if (_db.Tasks.Any()) return;
+
+        _db.Tasks.AddRange(
             new TaskItem
             {
                 Id = Guid.NewGuid().ToString(),
@@ -55,15 +66,16 @@ public class TaskStore
                 Hours = 12,
                 DueDate = "2026-05-20"
             }
-        };
+        );
+        _db.SaveChanges();
     }
 
     /// <summary>Returns all tasks in the store.</summary>
-    public List<TaskItem> GetAll() => _tasks;
+    public List<TaskItem> GetAll() => _db.Tasks.ToList();
 
     /// <summary>Finds a task by its unique ID, or null if not found.</summary>
     public TaskItem? GetById(string id) =>
-        _tasks.FirstOrDefault(t => t.Id == id);
+        _db.Tasks.Find(id);
 
     /// <summary>Creates a new task with an auto-generated ID.</summary>
     public TaskItem Create(TaskCreateRequest request)
@@ -77,7 +89,8 @@ public class TaskStore
             Hours = request.Hours!.Value,
             DueDate = request.DueDate!
         };
-        _tasks.Add(task);
+        _db.Tasks.Add(task);
+        _db.SaveChanges();
         return task;
     }
 
@@ -96,6 +109,7 @@ public class TaskStore
         if (request.Hours.HasValue) task.Hours = request.Hours.Value;
         if (request.DueDate != null) task.DueDate = request.DueDate;
 
+        _db.SaveChanges();
         return task;
     }
 
@@ -106,7 +120,8 @@ public class TaskStore
     {
         var task = GetById(id);
         if (task == null) return null;
-        _tasks.Remove(task);
+        _db.Tasks.Remove(task);
+        _db.SaveChanges();
         return task;
     }
 
@@ -116,11 +131,12 @@ public class TaskStore
     /// </summary>
     public TaskSummaryResponse GetSummary()
     {
-        var total = _tasks.Count;
-        var totalHours = _tasks.Sum(t => t.Hours);
+        var tasks = _db.Tasks.ToList();
+        var total = tasks.Count;
+        var totalHours = tasks.Sum(t => t.Hours);
         var avgHours = total > 0 ? (double)totalHours / total : 0.0;
 
-        var byStatus = _tasks
+        var byStatus = tasks
             .GroupBy(t => t.Status)
             .ToDictionary(g => g.Key, g => g.Count());
 

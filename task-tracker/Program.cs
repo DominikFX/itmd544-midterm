@@ -1,4 +1,5 @@
 using System.Text.Json;
+using Microsoft.EntityFrameworkCore;
 using YamlDotNet.Serialization;
 using task_tracker.Handlers;
 using task_tracker.Middleware;
@@ -8,8 +9,13 @@ using task_tracker.Store;
 //Build the application
 var builder = WebApplication.CreateBuilder(args);
 
-//Register the in-memory store as a singleton so all handlers share state
-builder.Services.AddSingleton<TaskStore>();
+// Register EF Core with Azure SQL connection string from environment
+var connectionString = builder.Configuration.GetConnectionString("DefaultConnection");
+builder.Services.AddDbContext<TaskDbContext>(options =>
+    options.UseSqlServer(connectionString));
+
+// Register the store as scoped (one per request, matches DbContext lifetime)
+builder.Services.AddScoped<TaskStore>();
 
 // Configure JSON serialization to use camelCase (matches OpenAPI convention)
 builder.Services.ConfigureHttpJsonOptions(options =>
@@ -17,7 +23,25 @@ builder.Services.ConfigureHttpJsonOptions(options =>
   options.SerializerOptions.PropertyNamingPolicy = JsonNamingPolicy.CamelCase;
 });
 
+// Add CORS so the client page can call the API
+builder.Services.AddCors(options =>
+{
+    options.AddDefaultPolicy(policy =>
+    {
+        policy.AllowAnyOrigin().AllowAnyMethod().AllowAnyHeader();
+    });
+});
+
 var app = builder.Build();
+
+// Auto-create database tables and seed data on startup
+using (var scope = app.Services.CreateScope())
+{
+    var db = scope.ServiceProvider.GetRequiredService<TaskDbContext>();
+    db.Database.EnsureCreated();
+    var store = scope.ServiceProvider.GetRequiredService<TaskStore>();
+    store.SeedIfEmpty();
+}
 
 // Locate the OpenAPI YAML spec
 var specPath = Path.Combine(AppContext.BaseDirectory, "openapi.yaml");
@@ -30,6 +54,12 @@ Console.WriteLine($"Spec loaded: {specPath}");
 
 // Register the spec-driven validation middleware
 app.UseMiddleware<OpenApiValidationMiddleware>(specPath);
+
+// Enable CORS
+app.UseCors();
+
+// Serve static files from wwwroot (client app)
+app.UseStaticFiles();
 
 // YAML
 app.MapGet("/openapi.yaml", () =>

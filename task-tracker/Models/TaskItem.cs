@@ -1,3 +1,5 @@
+using System.ComponentModel.DataAnnotations;
+
 namespace task_tracker.Models;
 
 /// <summary>
@@ -6,6 +8,7 @@ namespace task_tracker.Models;
 /// </summary>
 public class TaskItem
 {
+    [Key]
     public string Id { get; set; } = string.Empty;
     public string Title { get; set; } = string.Empty;
     public string Assignee { get; set; } = string.Empty;

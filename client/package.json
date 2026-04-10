@@ -1,0 +1,17 @@
+{
+  "name": "task-tracker-client",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "generate": "openapi-ts -i ../openapi.yaml -o ./generated -c @hey-api/client-fetch",
+    "build": "esbuild app.ts --bundle --outfile=../task-tracker/wwwroot/app.js --format=esm"
+  },
+  "dependencies": {
+    "@hey-api/client-fetch": "^0.8.0"
+  },
+  "devDependencies": {
+    "@hey-api/openapi-ts": "^0.66.0",
+    "esbuild": "^0.25.0"
+  }
+}

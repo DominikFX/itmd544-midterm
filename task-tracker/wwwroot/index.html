@@ -1,0 +1,248 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Task Tracker Client</title>
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    body {
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+      background: #1a1a2e;
+      color: #e0e0e0;
+      padding: 20px;
+      max-width: 1000px;
+      margin: 0 auto;
+    }
+
+    h1 {
+      color: #00d2ff;
+      margin-bottom: 20px;
+    }
+
+    h2 {
+      color: #a0c4ff;
+      margin: 20px 0 10px;
+    }
+
+    /* Action buttons */
+    .actions {
+      margin-bottom: 20px;
+      display: flex;
+      gap: 10px;
+    }
+
+    .btn {
+      padding: 8px 16px;
+      border: none;
+      border-radius: 4px;
+      cursor: pointer;
+      font-size: 14px;
+      background: #0077b6;
+      color: white;
+    }
+
+    .btn:hover {
+      background: #00b4d8;
+    }
+
+    /* Table */
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      margin-bottom: 20px;
+      background: #16213e;
+      border-radius: 8px;
+      overflow: hidden;
+    }
+
+    th,
+    td {
+      padding: 10px 12px;
+      text-align: left;
+      border-bottom: 1px solid #2a2a4a;
+    }
+
+    th {
+      background: #0f3460;
+      color: #a0c4ff;
+    }
+
+    td {
+      font-size: 13px;
+    }
+
+    /* Status badges */
+    .status-badge {
+      padding: 2px 8px;
+      border-radius: 10px;
+      font-size: 12px;
+      font-weight: bold;
+    }
+
+    .status-pending {
+      background: #e67e22;
+      color: white;
+    }
+
+    .status-inprogress {
+      background: #3498db;
+      color: white;
+    }
+
+    .status-done {
+      background: #2ecc71;
+      color: white;
+    }
+
+    /* Delete button */
+    .btn-delete {
+      padding: 4px 10px;
+      background: #e74c3c;
+      color: white;
+      border: none;
+      border-radius: 4px;
+      cursor: pointer;
+      font-size: 12px;
+    }
+
+    .btn-delete:hover {
+      background: #c0392b;
+    }
+
+    /* Form */
+    form {
+      background: #16213e;
+      padding: 16px;
+      border-radius: 8px;
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 10px;
+      margin-bottom: 20px;
+    }
+
+    label {
+      font-size: 13px;
+      color: #a0c4ff;
+    }
+
+    input,
+    select {
+      padding: 6px 10px;
+      border: 1px solid #2a2a4a;
+      border-radius: 4px;
+      background: #1a1a2e;
+      color: #e0e0e0;
+      font-size: 14px;
+    }
+
+    .form-group {
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+    }
+
+    .form-submit {
+      grid-column: 1 / -1;
+      display: flex;
+      justify-content: flex-end;
+    }
+
+    /* Summary */
+    pre {
+      background: #16213e;
+      padding: 16px;
+      border-radius: 8px;
+      font-size: 13px;
+      overflow-x: auto;
+      min-height: 60px;
+      color: #2ecc71;
+    }
+
+    /* Status message */
+    #status-message {
+      min-height: 20px;
+      font-size: 14px;
+      font-weight: bold;
+      margin-bottom: 10px;
+    }
+  </style>
+</head>
+
+<body>
+  <h1>📋 Task Tracker Client</h1>
+  <p style="margin-bottom:10px; color:#888;">
+    This client uses a generated TypeScript SDK (via <code>@hey-api/openapi-ts</code>) to call the Task Tracker API.
+  </p>
+
+  <div id="status-message"></div>
+
+  <div class="actions">
+    <button class="btn" id="btn-load">🔄 Refresh Tasks</button>
+    <button class="btn" id="btn-summary">📊 Get Summary</button>
+  </div>
+
+  <h2>All Tasks</h2>
+  <table>
+    <thead>
+      <tr>
+        <th>ID</th>
+        <th>Title</th>
+        <th>Assignee</th>
+        <th>Status</th>
+        <th>Hours</th>
+        <th>Due Date</th>
+        <th>Actions</th>
+      </tr>
+    </thead>
+    <tbody id="task-table-body">
+      <tr>
+        <td colspan="7" style="text-align:center;">Loading...</td>
+      </tr>
+    </tbody>
+  </table>
+
+  <h2>Task Summary</h2>
+  <pre id="summary-output">Click "Get Summary" to load statistics...</pre>
+
+  <h2>Create New Task</h2>
+  <form id="create-form">
+    <div class="form-group">
+      <label for="title">Title</label>
+      <input type="text" name="title" id="title" required>
+    </div>
+    <div class="form-group">
+      <label for="assignee">Assignee</label>
+      <input type="text" name="assignee" id="assignee" required>
+    </div>
+    <div class="form-group">
+      <label for="status">Status</label>
+      <select name="status" id="status" required>
+        <option value="Pending">Pending</option>
+        <option value="InProgress">InProgress</option>
+        <option value="Done">Done</option>
+      </select>
+    </div>
+    <div class="form-group">
+      <label for="hours">Hours</label>
+      <input type="number" name="hours" id="hours" min="1" required>
+    </div>
+    <div class="form-group">
+      <label for="dueDate">Due Date</label>
+      <input type="date" name="dueDate" id="dueDate" required>
+    </div>
+    <div class="form-submit">
+      <button type="submit" class="btn">Create Task</button>
+    </div>
+  </form>
+
+  <script type="module" src="app.js"></script>
+</body>
+
+</html>

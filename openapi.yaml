@@ -10,6 +10,8 @@ info:
     name: Student
 
 servers:
+  - url: https://itmd544-midterm-atdsanc8azbyeha3.canadacentral-01.azurewebsites.net
+    description: Azure App Service (production)
   - url: http://localhost:5000
     description: Local development server
 
