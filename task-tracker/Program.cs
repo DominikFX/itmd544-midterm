@@ -58,8 +58,14 @@ app.UseMiddleware<OpenApiValidationMiddleware>(specPath);
 // Enable CORS
 app.UseCors();
 
-// Serve static files from wwwroot (client app)
-app.UseStaticFiles();
+// Client app routes — served explicitly to avoid conflict with /{id} route
+var wwwroot = app.Environment.WebRootPath ?? Path.Combine(app.Environment.ContentRootPath, "wwwroot");
+app.MapGet("/client", () =>
+    Results.Content(File.ReadAllText(Path.Combine(wwwroot, "index.html")), "text/html"))
+    .ExcludeFromDescription();
+app.MapGet("/client/app.js", () =>
+    Results.Content(File.ReadAllText(Path.Combine(wwwroot, "app.js")), "application/javascript"))
+    .ExcludeFromDescription();
 
 // YAML
 app.MapGet("/openapi.yaml", () =>
