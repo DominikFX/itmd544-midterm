@@ -10,9 +10,18 @@ using task_tracker.Store;
 var builder = WebApplication.CreateBuilder(args);
 
 // Register EF Core with Azure SQL connection string from environment
-var connectionString = builder.Configuration.GetConnectionString("DefaultConnection");
+var connectionString = builder.Configuration.GetConnectionString("DefaultConnection")
+    ?? Environment.GetEnvironmentVariable("AZURE_SQL_CONNECTIONSTRING");
+
 builder.Services.AddDbContext<TaskDbContext>(options =>
-    options.UseSqlServer(connectionString));
+    options.UseSqlServer(connectionString, sqlOptions =>
+    {
+        // Enable resilient connections for Azure SQL Serverless cold starts
+        sqlOptions.EnableRetryOnFailure(
+            maxRetryCount: 5,
+            maxRetryDelay: TimeSpan.FromSeconds(30),
+            errorNumbersToAdd: null);
+    }));
 
 // Register the store as scoped (one per request, matches DbContext lifetime)
 builder.Services.AddScoped<TaskStore>();
@@ -37,10 +46,17 @@ var app = builder.Build();
 // Auto-create database tables and seed data on startup
 using (var scope = app.Services.CreateScope())
 {
-    var db = scope.ServiceProvider.GetRequiredService<TaskDbContext>();
-    db.Database.EnsureCreated();
-    var store = scope.ServiceProvider.GetRequiredService<TaskStore>();
-    store.SeedIfEmpty();
+    try
+    {
+        var db = scope.ServiceProvider.GetRequiredService<TaskDbContext>();
+        db.Database.EnsureCreated();
+        var store = scope.ServiceProvider.GetRequiredService<TaskStore>();
+        store.SeedIfEmpty();
+    }
+    catch (Exception ex)
+    {
+        Console.WriteLine($"Database initialization failed: {ex.Message}");
+    }
 }
 
 // Locate the OpenAPI YAML spec
