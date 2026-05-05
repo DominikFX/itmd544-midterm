@@ -7,7 +7,7 @@ A contract-first REST API for managing tasks, built with **ASP.NET Core Minimal 
 | Resource | URL |
 |----------|-----|
 | **Swagger UI** | [https://itmd544-midterm-atdsanc8azbyeha3.canadacentral-01.azurewebsites.net/docs](https://itmd544-midterm-atdsanc8azbyeha3.canadacentral-01.azurewebsites.net/docs) |
-| **Client App** | [https://itmd544-midterm-atdsanc8azbyeha3.canadacentral-01.azurewebsites.net/index.html](https://itmd544-midterm-atdsanc8azbyeha3.canadacentral-01.azurewebsites.net/index.html) |
+| **Client App** | [https://itmd544-midterm-atdsanc8azbyeha3.canadacentral-01.azurewebsites.net/client](https://itmd544-midterm-atdsanc8azbyeha3.canadacentral-01.azurewebsites.net/client) |
 | `/openapi.yaml` | [https://itmd544-midterm-atdsanc8azbyeha3.canadacentral-01.azurewebsites.net/openapi.yaml](https://itmd544-midterm-atdsanc8azbyeha3.canadacentral-01.azurewebsites.net/openapi.yaml) |
 | `/openapi.json` | [https://itmd544-midterm-atdsanc8azbyeha3.canadacentral-01.azurewebsites.net/openapi.json](https://itmd544-midterm-atdsanc8azbyeha3.canadacentral-01.azurewebsites.net/openapi.json) |
 
@@ -39,7 +39,7 @@ dotnet restore
 dotnet run
 ```
 
-The API will be available at `http://localhost:5000`. The client app is at `http://localhost:5000/index.html`.
+The API will be available at `http://localhost:5000`. The client app is at `http://localhost:5000/client`.
 
 ## Database Schema
 
